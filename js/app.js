@@ -10,7 +10,77 @@ document.addEventListener("DOMContentLoaded", () => {
   if (page === "wishlist.html") initWishlistPage();
   if (page === "receipt.html") initReceiptPage();
   initSearchDropdown();
+  initHamburger();
+  initMobileSearch();
 });
+
+// ─── MOBILE SEARCH ────────────────────────────────────
+function toggleMobileSearch() {
+  const bar = document.getElementById("mobile-search-bar");
+  const input = document.getElementById("mobile-search-input");
+  if (!bar) return;
+  const isOpen = bar.classList.toggle("open");
+  if (isOpen && input) {
+    setTimeout(() => input.focus(), 80);
+    // close hamburger nav if open
+    document.getElementById("mobile-nav")?.classList.remove("open");
+    document.getElementById("hamburger-btn")?.classList.remove("open");
+  }
+}
+
+function handleMobileSearch() {
+  const query = document.getElementById("mobile-search-input")?.value.trim();
+  if (query) window.location.href = `catalogue.html?search=${encodeURIComponent(query)}`;
+}
+
+function initMobileSearch() {
+  const input = document.getElementById("mobile-search-input");
+  if (!input) return;
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") handleMobileSearch();
+    if (e.key === "Escape") {
+      document.getElementById("mobile-search-bar")?.classList.remove("open");
+    }
+  });
+  // If on catalogue page and there's a search query, pre-fill mobile input too
+  const params = new URLSearchParams(window.location.search);
+  const q = params.get("search");
+  if (q) input.value = q;
+}
+
+// ─── HAMBURGER MENU ───────────────────────────────────
+function initHamburger() {
+  const hamburger = document.getElementById("hamburger-btn");
+  const mobileNav = document.getElementById("mobile-nav");
+  if (!hamburger || !mobileNav) return;
+
+  // Mark active link
+  mobileNav.querySelectorAll("a").forEach(a => {
+    const href = a.getAttribute("href");
+    if (href === page || (page === "" && href === "index.html")) {
+      a.classList.add("active");
+    }
+  });
+
+  hamburger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    hamburger.classList.toggle("open");
+    mobileNav.classList.toggle("open");
+    // close search if open
+    document.getElementById("mobile-search-bar")?.classList.remove("open");
+    closeAllPanels();
+  });
+
+  document.addEventListener("click", (e) => {
+    if (
+      !hamburger.contains(e.target) &&
+      !mobileNav.contains(e.target)
+    ) {
+      hamburger.classList.remove("open");
+      mobileNav.classList.remove("open");
+    }
+  });
+}
 
 // ─── SEARCH ───────────────────────────────────────────
 function handleSearch() {
@@ -138,6 +208,16 @@ function initHomePage() {
   renderBanner();
   renderPopularGames();
   renderDiscountGames();
+  // Touch swipe for banner
+  const banner = document.getElementById("banner");
+  if (banner) {
+    let startX = 0;
+    banner.addEventListener("touchstart", e => { startX = e.touches[0].clientX; }, { passive: true });
+    banner.addEventListener("touchend", e => {
+      const diff = startX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) moveBanner(diff > 0 ? 1 : -1);
+    }, { passive: true });
+  }
 }
 
 function renderBanner() {
@@ -646,26 +726,8 @@ function renderWishlist() {
     return;
   }
 
-  grid.innerHTML = list.map(game => `
-    <div class="game-card" style="display:block; text-decoration:none; color:var(--text)">
-      <a href="game.html?id=${game.id}" style="text-decoration:none; color:inherit">
-        <img src="${game.imageVer || game.image}" alt="${game.title}" style="width:100%; aspect-ratio:3/4; object-fit:cover;" onerror="this.src='https://placehold.co/300x400/1c1c2e/7c3aed?text=No+Image'">
-        <div class="game-card-info">
-          <h3>${game.title}</h3>
-          <p class="platform">${game.platform} • ${game.genre}</p>
-          <div class="price-row">
-            <span class="price-new">€${game.price}</span>
-            <span class="price-old">€${game.originalPrice}</span>
-            <span class="discount-badge">-${game.discount}%</span>
-          </div>
-        </div>
-      </a>
-      <div style="padding: 0 0.85rem 0.85rem; display:flex; gap:0.5rem;">
-        <button class="btn btn-primary" style="flex:1; justify-content:center; font-size:0.8rem; padding:8px" onclick='addToCart(${JSON.stringify(game)})'>🛒 Add to Cart</button>
-        <button class="btn btn-outline" style="padding:8px 10px" onclick="handleRemoveFromWishlist(${game.id})">🗑️</button>
-      </div>
-    </div>
-  `).join("");
+  // Reuse the standard card (which already has cart + wishlist buttons)
+  grid.innerHTML = list.map(createGameCard).join("");
 }
 
 function handleRemoveFromWishlist(id) {

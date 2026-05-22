@@ -461,14 +461,109 @@ main { max-width: 1280px; margin: 0 auto; padding: 2rem; }
   text-decoration: line-through;
 }
 
-.discount-badge {
-  background: var(--accent);
+/* ─── GAME CARD WRAPPER + QUICK-ACTION BUTTONS ───────── */
+.game-card-wrap {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+
+.game-card-wrap:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 32px rgba(124, 58, 237, 0.25);
+  border-color: var(--accent);
+}
+
+/* Make the inner <a> not carry its own border/radius anymore */
+.game-card-wrap .game-card {
+  border: none;
+  border-radius: 0;
+  transform: none;
+  box-shadow: none;
+  display: block;
+}
+
+.game-card-wrap .game-card:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+/* Action bar at the bottom of every card */
+.card-actions {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0 0.7rem 0.7rem;
+}
+
+/* On desktop, hide until hover */
+@media (hover: hover) {
+  .card-actions {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.6rem 0.7rem;
+    background: linear-gradient(0deg, rgba(10,10,15,0.92) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity var(--transition);
+  }
+  .game-card-wrap:hover .card-actions { opacity: 1; }
+}
+
+/* Wishlist heart button */
+.card-wish-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
   color: white;
-  font-size: 0.7rem;
+  border-radius: 7px;
+  width: 36px;
+  height: 34px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.card-wish-btn:hover { background: rgba(239,68,68,0.35); border-color: #ef4444; }
+.card-wish-btn.active { background: rgba(167,139,250,0.3); border-color: #a78bfa; }
+
+/* Add to cart button */
+.card-cart-btn {
+  flex: 1;
+  background: var(--accent);
+  border: none;
+  color: white;
+  border-radius: 7px;
+  height: 34px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.8rem;
   font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 6px;
-  margin-left: auto;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.card-cart-btn:hover { background: var(--accent-hover); }
+.card-cart-btn.in-cart { background: #16a34a; }
+.card-cart-btn.in-cart:hover { background: #15803d; }
+
+/* On touch devices — always show the action bar (no hover) */
+@media (hover: none) {
+  .card-wish-btn,
+  .card-cart-btn {
+    background: var(--bg3);
+    border-color: var(--border);
+    color: var(--text);
+  }
+  .card-cart-btn { background: var(--accent); color: white; }
+  .card-cart-btn.in-cart { background: #16a34a; }
+  .card-wish-btn.active { background: rgba(167,139,250,0.3); border-color: #a78bfa; }
 }
 
 /* ─── BUTTONS ────────────────────── */
@@ -1131,13 +1226,125 @@ footer span { color: var(--accent); }
 
 /* ─── RESPONSIVE ─────────────────── */
 @media (max-width: 768px) {
-  header { padding: 0 1rem; }
+  header {
+    padding: 0 1rem;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 56px;
+    row-gap: 0;
+  }
+
+  .logo { font-size: 1.3rem; }
+
+  /* Hide the desktop search bar */
+  .search-bar { display: none; }
+
   nav { display: none; }
+
   main { padding: 1rem; }
-  .banner { height: 280px; }
-  .slide-info h2 { font-size: 1.4rem; }
+  .banner { height: 240px; }
+  .slide-info h2 { font-size: 1.3rem; }
   .games-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.75rem; }
+
+  /* Search toggle button appears in header */
+  .search-toggle-btn {
+    display: flex !important;
+  }
+
+  /* Full-width search bar below header */
+  .mobile-search-bar {
+    display: none;
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    padding: 0.6rem 1rem;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    z-index: 98;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+
+  .mobile-search-bar.open { display: block; }
+
+  .mobile-search-bar .search-bar {
+    display: flex;
+    max-width: none;
+  }
+
+  /* Push main content down when mobile search is open */
+  body.search-open main,
+  body.search-open .banner {
+    /* handled by the fixed positioning */
+  }
 }
+
+@media (min-width: 769px) {
+  .search-toggle-btn { display: none !important; }
+  .mobile-search-bar { display: none !important; }
+}
+
+/* ─── HAMBURGER MENU ─────────────── */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 40px;
+  height: 36px;
+  cursor: pointer;
+  padding: 0 9px;
+  flex-shrink: 0;
+}
+
+.hamburger span {
+  display: block;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+  transition: all 0.25s ease;
+}
+
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+@media (max-width: 768px) {
+  .hamburger { display: flex; }
+}
+
+/* Mobile nav drawer */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  top: 56px;
+  left: 0;
+  right: 0;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0.75rem 1.25rem;
+  flex-direction: column;
+  z-index: 97;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.28);
+}
+
+.mobile-nav.open { display: flex; }
+
+.mobile-nav a {
+  color: var(--text2);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+  transition: color var(--transition);
+}
+
+.mobile-nav a:last-child { border-bottom: none; }
+.mobile-nav a:hover, .mobile-nav a.active { color: var(--accent); }
 
 /* ─── CART / WISHLIST DROPDOWN PANELS ─── */
 

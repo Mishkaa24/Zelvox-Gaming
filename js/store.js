@@ -123,20 +123,76 @@ function initBackToTop() {
 
 // ─── RENDER GAME CARD ─────────────────────────────────
 function createGameCard(game) {
+  const inCart     = getCart().some(g => g.id === game.id);
+  const inWishlist = getWishlist().some(g => g.id === game.id);
+  const gameJSON   = JSON.stringify(game).replace(/'/g, "&#39;");
   return `
-    <a class="game-card" href="game.html?id=${game.id}">
-      <img src="${game.imageVer || game.image}" alt="${game.title}" loading="lazy" onerror="this.src='https://placehold.co/300x400/1c1c2e/7c3aed?text=No+Image'">
-      <div class="game-card-info">
-        <h3>${game.title}</h3>
-        <p class="platform">${game.platform} • ${game.genre}</p>
-        <div class="price-row">
-          <span class="price-new">€${game.price}</span>
-          <span class="price-old">€${game.originalPrice}</span>
-          <span class="discount-badge">-${game.discount}%</span>
+    <div class="game-card-wrap">
+      <a class="game-card" href="game.html?id=${game.id}">
+        <img src="${game.imageVer || game.image}" alt="${game.title}" loading="lazy"
+             onerror="this.src='https://placehold.co/300x400/1c1c2e/7c3aed?text=No+Image'">
+        <div class="game-card-info">
+          <h3>${game.title}</h3>
+          <p class="platform">${game.platform} • ${game.genre}</p>
+          <div class="price-row">
+            <span class="price-new">€${game.price}</span>
+            <span class="price-old">€${game.originalPrice}</span>
+            <span class="discount-badge">-${game.discount}%</span>
+          </div>
         </div>
+      </a>
+      <div class="card-actions">
+        <button
+          class="card-wish-btn${inWishlist ? " active" : ""}"
+          title="${inWishlist ? "Remove from wishlist" : "Add to wishlist"}"
+          onclick='cardToggleWishlist(event, ${gameJSON}, this)'>
+          ${inWishlist ? "💜" : "🤍"}
+        </button>
+        <button
+          class="card-cart-btn${inCart ? " in-cart" : ""}"
+          title="${inCart ? "Remove from cart" : "Add to cart"}"
+          onclick='cardToggleCart(event, ${gameJSON}, this)'>
+          ${inCart ? "✓ In Cart" : "🛒 Add"}
+        </button>
       </div>
-    </a>
+    </div>
   `;
+}
+
+function cardToggleWishlist(event, game, btn) {
+  event.preventDefault();
+  event.stopPropagation();
+  const inList = getWishlist().some(g => g.id === game.id);
+  if (inList) {
+    removeFromWishlist(game.id);
+    btn.classList.remove("active");
+    btn.innerHTML = "🤍";
+    btn.title = "Add to wishlist";
+    showToast("💔 Removed from wishlist");
+  } else {
+    addToWishlist(game);
+    btn.classList.add("active");
+    btn.innerHTML = "💜";
+    btn.title = "Remove from wishlist";
+  }
+}
+
+function cardToggleCart(event, game, btn) {
+  event.preventDefault();
+  event.stopPropagation();
+  const inCart = getCart().some(g => g.id === game.id);
+  if (inCart) {
+    removeFromCart(game.id);
+    btn.classList.remove("in-cart");
+    btn.innerHTML = "🛒 Add";
+    btn.title = "Add to cart";
+    showToast("🗑️ Removed from cart");
+  } else {
+    addToCart(game);
+    btn.classList.add("in-cart");
+    btn.innerHTML = "✓ In Cart";
+    btn.title = "Remove from cart";
+  }
 }
 
 // ─── GAME PAGE TOGGLE ACTIONS ─────────────────────────

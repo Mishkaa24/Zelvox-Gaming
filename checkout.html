@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Zelvox Gaming - Cart</title>
+  <title>Zelvox Gaming - Payment</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -73,21 +73,69 @@
   <main>
     <div class="checkout-flow">
       <div class="checkout-progress">
-        <div class="progress-step active"><span>1</span>Cart</div>
+        <div class="progress-step completed"><span>✓</span>Cart</div>
         <div class="progress-line"></div>
-        <div class="progress-step"><span>2</span>Payment</div>
+        <div class="progress-step active"><span>2</span>Payment</div>
         <div class="progress-line"></div>
         <div class="progress-step"><span>3</span>Activation</div>
       </div>
 
       <div class="section-header">
-        <h2>🛒 My Cart</h2>
-        <a href="catalogue.html">Continue shopping →</a>
+        <h2>💳 Payment</h2>
+        <a href="cart.html">Back to cart</a>
       </div>
 
-      <section class="cart-stage">
-        <div id="cart-container"></div>
-        <aside id="cart-summary"></aside>
+      <section class="payment-stage">
+        <form id="checkout-form" class="payment-form" novalidate>
+          <div class="payment-section">
+            <h2>Contact details</h2>
+            <label>
+              Full name
+              <input type="text" name="fullName" id="fullName" placeholder="Your name" />
+              <span class="form-error" id="fullNameError"></span>
+            </label>
+            <label>
+              Email
+              <input type="email" name="email" id="email" placeholder="you@example.com" />
+              <span class="form-error" id="emailError"></span>
+            </label>
+            <label>
+              Phone
+              <input type="tel" name="phone" id="phone" placeholder="+44 7000 000000" />
+              <span class="form-error" id="phoneError"></span>
+            </label>
+          </div>
+
+          <div class="payment-section">
+            <h2>Payment method</h2>
+            <div class="payment-methods">
+              <label class="payment-method">
+                <input type="radio" name="paymentMethod" value="card" />
+                <span>💳 Card online</span>
+                <small>Instant digital delivery after confirmation</small>
+              </label>
+              <label class="payment-method">
+                <input type="radio" name="paymentMethod" value="paypal" />
+                <span>PayPal</span>
+                <small>Use your PayPal balance or linked card</small>
+              </label>
+              <label class="payment-method">
+                <input type="radio" name="paymentMethod" value="gift-card" />
+                <span>Gift card</span>
+                <small>Redeem a Zelvox wallet or gift balance</small>
+              </label>
+            </div>
+            <span class="form-error" id="paymentMethodError"></span>
+          </div>
+
+          <button type="submit" class="checkout-primary-btn">Complete payment</button>
+        </form>
+
+        <aside class="payment-summary">
+          <h2>Your order</h2>
+          <div id="payment-items"></div>
+          <div id="payment-total"></div>
+        </aside>
       </section>
     </div>
   </main>
@@ -97,13 +145,6 @@
       <div class="footer-brand">
         <a href="index.html" class="logo footer-logo">ZELVOX<span>.</span>GG</a>
         <p class="footer-tagline">Games for everyone,<br>at prices that delight.</p>
-        <div class="footer-newsletter">
-          <p>🔔 Get notified about deals:</p>
-          <div class="newsletter-input">
-            <input type="email" placeholder="your email..." />
-            <button onclick="subscribeNewsletter()">→</button>
-          </div>
-        </div>
       </div>
       <div class="footer-links">
         <h4>Navigation</h4>
