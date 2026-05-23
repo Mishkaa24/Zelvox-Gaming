@@ -6,81 +6,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (page === "catalogue.html") initCataloguePage();
   if (page === "game.html") initGamePage();
   if (page === "cart.html") initCartPage();
-  if (page === "checkout.html") initCheckoutPage();
   if (page === "wishlist.html") initWishlistPage();
   if (page === "receipt.html") initReceiptPage();
-  initSearchDropdown();
-  initHamburger();
-  initMobileSearch();
 });
-
-// ─── MOBILE SEARCH ────────────────────────────────────
-function toggleMobileSearch() {
-  const bar = document.getElementById("mobile-search-bar");
-  const input = document.getElementById("mobile-search-input");
-  if (!bar) return;
-  const isOpen = bar.classList.toggle("open");
-  if (isOpen && input) {
-    setTimeout(() => input.focus(), 80);
-    // close hamburger nav if open
-    document.getElementById("mobile-nav")?.classList.remove("open");
-    document.getElementById("hamburger-btn")?.classList.remove("open");
-  }
-}
-
-function handleMobileSearch() {
-  const query = document.getElementById("mobile-search-input")?.value.trim();
-  if (query) window.location.href = `catalogue.html?search=${encodeURIComponent(query)}`;
-}
-
-function initMobileSearch() {
-  const input = document.getElementById("mobile-search-input");
-  if (!input) return;
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") handleMobileSearch();
-    if (e.key === "Escape") {
-      document.getElementById("mobile-search-bar")?.classList.remove("open");
-    }
-  });
-  // If on catalogue page and there's a search query, pre-fill mobile input too
-  const params = new URLSearchParams(window.location.search);
-  const q = params.get("search");
-  if (q) input.value = q;
-}
-
-// ─── HAMBURGER MENU ───────────────────────────────────
-function initHamburger() {
-  const hamburger = document.getElementById("hamburger-btn");
-  const mobileNav = document.getElementById("mobile-nav");
-  if (!hamburger || !mobileNav) return;
-
-  // Mark active link
-  mobileNav.querySelectorAll("a").forEach(a => {
-    const href = a.getAttribute("href");
-    if (href === page || (page === "" && href === "index.html")) {
-      a.classList.add("active");
-    }
-  });
-
-  hamburger.addEventListener("click", (e) => {
-    e.stopPropagation();
-    hamburger.classList.toggle("open");
-    mobileNav.classList.toggle("open");
-    // close search if open
-    document.getElementById("mobile-search-bar")?.classList.remove("open");
-    closeAllPanels();
-  });
-
-  document.addEventListener("click", (e) => {
-    if (
-      !hamburger.contains(e.target) &&
-      !mobileNav.contains(e.target)
-    ) {
-      hamburger.classList.remove("open");
-      mobileNav.classList.remove("open");
-    }
-  });
-}
 
 // ─── SEARCH ───────────────────────────────────────────
 function handleSearch() {
@@ -94,130 +22,11 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-function initSearchDropdown() {
-  const input = document.getElementById("search-input");
-  const searchBar = document.querySelector(".search-bar");
-  if (!input || !searchBar || document.getElementById("search-dropdown")) return;
-
-  const dropdown = document.createElement("div");
-  dropdown.id = "search-dropdown";
-  dropdown.className = "search-dropdown";
-  searchBar.appendChild(dropdown);
-
-  input.addEventListener("input", () => renderSearchDropdown());
-  input.addEventListener("focus", () => renderSearchDropdown());
-  input.addEventListener("keydown", handleSearchDropdownKeys);
-
-  document.addEventListener("click", (e) => {
-    if (!searchBar.contains(e.target)) closeSearchDropdown();
-  });
-}
-
-function renderSearchDropdown() {
-  const input = document.getElementById("search-input");
-  const dropdown = document.getElementById("search-dropdown");
-  if (!input || !dropdown) return;
-
-  const query = input.value.trim().toLowerCase();
-  if (!query) {
-    closeSearchDropdown();
-    return;
-  }
-
-  const matches = games
-    .filter(game =>
-      game.title.toLowerCase().includes(query) ||
-      game.genre.toLowerCase().includes(query) ||
-      game.platform.toLowerCase().includes(query)
-    )
-    .slice(0, 6);
-
-  if (matches.length === 0) {
-    dropdown.innerHTML = `<div class="search-empty">No games found</div>`;
-    dropdown.classList.add("open");
-    return;
-  }
-
-  dropdown.innerHTML = matches.map((game, index) => `
-    <a class="search-result" href="game.html?id=${game.id}" data-index="${index}">
-      <img src="${game.imageVer || game.image}" alt="${escapeHTML(game.title)}" onerror="this.src='https://placehold.co/48x48/1c1c2e/7c3aed?text=?'">
-      <span class="search-result-info">
-        <strong>${escapeHTML(game.title)}</strong>
-        <small>${escapeHTML(game.platform)} • ${escapeHTML(game.genre)}</small>
-      </span>
-      <span class="search-result-price">€${game.price}</span>
-    </a>
-  `).join("");
-
-  dropdown.classList.add("open");
-}
-
-function handleSearchDropdownKeys(e) {
-  const dropdown = document.getElementById("search-dropdown");
-  if (!dropdown || !dropdown.classList.contains("open")) return;
-
-  const results = Array.from(dropdown.querySelectorAll(".search-result"));
-  if (e.key === "Escape") {
-    closeSearchDropdown();
-    return;
-  }
-  if (results.length === 0) return;
-
-  const current = results.findIndex(item => item.classList.contains("active"));
-
-  if (e.key === "ArrowDown") {
-    e.preventDefault();
-    e.stopPropagation();
-    const next = current < results.length - 1 ? current + 1 : 0;
-    setActiveSearchResult(results, next);
-  } else if (e.key === "ArrowUp") {
-    e.preventDefault();
-    e.stopPropagation();
-    const prev = current > 0 ? current - 1 : results.length - 1;
-    setActiveSearchResult(results, prev);
-  } else if (e.key === "Enter" && current >= 0) {
-    e.preventDefault();
-    e.stopPropagation();
-    window.location.href = results[current].href;
-  }
-}
-
-function setActiveSearchResult(results, index) {
-  results.forEach((item, i) => item.classList.toggle("active", i === index));
-}
-
-function closeSearchDropdown() {
-  const dropdown = document.getElementById("search-dropdown");
-  if (!dropdown) return;
-  dropdown.classList.remove("open");
-}
-
-function escapeHTML(value) {
-  return String(value).replace(/[&<>"']/g, char => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    "\"": "&quot;",
-    "'": "&#39;"
-  }[char]));
-}
-
-
 // ─── HOME PAGE ────────────────────────────────────────
 function initHomePage() {
   renderBanner();
   renderPopularGames();
   renderDiscountGames();
-  // Touch swipe for banner
-  const banner = document.getElementById("banner");
-  if (banner) {
-    let startX = 0;
-    banner.addEventListener("touchstart", e => { startX = e.touches[0].clientX; }, { passive: true });
-    banner.addEventListener("touchend", e => {
-      const diff = startX - e.changedTouches[0].clientX;
-      if (Math.abs(diff) > 50) moveBanner(diff > 0 ? 1 : -1);
-    }, { passive: true });
-  }
 }
 
 function renderBanner() {
@@ -229,35 +38,23 @@ function renderBanner() {
     <div class="slide ${i === 0 ? "active" : ""}" style="background-image: url('${g.imageHor || g.image}')">
       <div class="slide-overlay">
         <div class="slide-info">
-          <span class="slide-discount">-${g.discount}%</span>
           <h2>${g.title}</h2>
-          <div class="slide-price">
-            <span class="slide-price-new">€${g.price}</span>
-            <span class="slide-price-old">€${g.originalPrice}</span>
-          </div>
-          <a href="game.html?id=${g.id}" class="btn btn-primary">Buy Now →</a>
+          <p>${g.description}</p>
+          <a href="game.html?id=${g.id}" class="btn btn-primary">Дивитись гру →</a>
         </div>
       </div>
     </div>
   `).join("") + `
     <div class="banner-dots">
-      ${featured.map((_, i) => `<div class="dot ${i === 0 ? "active" : ""}" onclick="goToSlide(${i}); clearInterval(window._bannerInterval);" title="Slide ${i + 1}"></div>`).join("")}
+      ${featured.map((_, i) => `<div class="dot ${i === 0 ? "active" : ""}" onclick="goToSlide(${i})"></div>`).join("")}
     </div>
   `;
 
-  window._bannerCurrent = 0;
-  window._bannerCount = featured.length;
+  let current = 0;
   window._bannerInterval = setInterval(() => {
-    window._bannerCurrent = (window._bannerCurrent + 1) % featured.length;
-    goToSlide(window._bannerCurrent);
-  }, 10000);
-}
-
-function moveBanner(dir) {
-  const count = window._bannerCount || 1;
-  window._bannerCurrent = ((window._bannerCurrent || 0) + dir + count) % count;
-  goToSlide(window._bannerCurrent);
-  clearInterval(window._bannerInterval);
+    current = (current + 1) % featured.length;
+    goToSlide(current);
+  }, 4000);
 }
 
 function goToSlide(index) {
@@ -316,8 +113,8 @@ function applyFilters() {
     grid.innerHTML = `
       <div class="empty-state" style="grid-column:1/-1">
         <div class="emoji">😔</div>
-        <h2>No games found</h2>
-        <p>Try changing the filters or search query</p>
+        <h2>Ігор не знайдено</h2>
+        <p>Спробуй змінити фільтри або пошуковий запит</p>
       </div>`;
   } else {
     grid.innerHTML = filtered.map(createGameCard).join("");
@@ -325,12 +122,6 @@ function applyFilters() {
 }
 
 // ─── GAME PAGE ────────────────────────────────────────
-function getReviewColor(score) {
-  if (score >= 90) return "#4ade80";
-  if (score >= 70) return "#facc15";
-  return "#f87171";
-}
-
 function initGamePage() {
   const params = new URLSearchParams(window.location.search);
   const id = parseInt(params.get("id"));
@@ -341,206 +132,45 @@ function initGamePage() {
     container.innerHTML = `
       <div class="empty-state">
         <div class="emoji">❌</div>
-        <h2>Game not found</h2>
-        <a href="catalogue.html" class="btn btn-primary">← Catalogue</a>
+        <h2>Гру не знайдено</h2>
+        <a href="catalogue.html" class="btn btn-primary">← Каталог</a>
       </div>`;
     return;
   }
 
   document.title = `Zelvox Gaming — ${game.title}`;
 
-  const reviewColor = getReviewColor(game.reviewScore || 0);
-
-  // Description
-  const fullDesc = game.description || "";
-  const shortDesc = fullDesc.length > 220 ? fullDesc.slice(0, 220) + "..." : fullDesc;
-  const hasMore = fullDesc.length > 220;
-
-  // Info table rows
-  const infoRows = [
-    game.developer   ? `<div class="info-row"><span class="info-label">Developer</span><span class="info-value">${game.developer}</span></div>` : "",
-    game.publisher   ? `<div class="info-row"><span class="info-label">Publisher</span><span class="info-value">${game.publisher}</span></div>` : "",
-    game.releaseDate ? `<div class="info-row"><span class="info-label">Release Date</span><span class="info-value">${game.releaseDate}</span></div>` : "",
-    `<div class="info-row"><span class="info-label">Genre</span><span class="info-value">${game.genre}</span></div>`,
-    `<div class="info-row"><span class="info-label">Platform</span><span class="info-value">${game.platform}</span></div>`,
-    game.reviewText  ? `<div class="info-row"><span class="info-label">All Reviews</span><span class="info-value" style="color:${reviewColor}">${game.reviewText} (${game.reviewCount})</span></div>` : "",
-  ].join("");
-
-  // System requirements
-  let sysreqHTML = "";
-  if (game.systemReqs) {
-    const r = game.systemReqs;
-    sysreqHTML = `
-      <div class="gd-sysreqs">
-        <h3 class="gd-section-title">System Requirements</h3>
-        <div class="sysreq-grid">
-          <div class="sysreq-col">
-            <h4>Minimum*</h4>
-            ${r.min.map(([k, v]) => `
-              <div class="sysreq-row">
-                <span class="sysreq-key">${k}:</span>
-                <span class="sysreq-val">${v}</span>
-              </div>`).join("")}
-          </div>
-          <div class="sysreq-col">
-            <h4>Recommended*</h4>
-            ${r.rec.map(([k, v]) => `
-              <div class="sysreq-row">
-                <span class="sysreq-key">${k}:</span>
-                <span class="sysreq-val">${v}</span>
-              </div>`).join("")}
-          </div>
-        </div>
-      </div>`;
-  }
-
-  // Media gallery
-  const media = game.media || [];
-  const firstItem = media[0];
-  const firstMainHTML = firstItem
-    ? firstItem.type === "video"
-      ? `<video id="media-main-video" src="${firstItem.src}" controls poster="${firstItem.thumb || ""}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);"></video>`
-      : `<img src="${firstItem.src}" alt="screenshot" id="media-main-img" onclick="openLightbox(0)" style="cursor:zoom-in;width:100%;height:100%;object-fit:cover;">`
-    : "";
-
-  const galleryHTML = media.length > 0 ? `
-    <div class="screenshot-gallery">
-      <div class="screenshot-main" id="media-main-container" style="position:relative;">
-        ${firstMainHTML}
-        <button class="ss-arrow ss-arrow-left" onclick="changeMedia(-1)">&#8249;</button>
-        <button class="ss-arrow ss-arrow-right" onclick="changeMedia(1)">&#8250;</button>
-      </div>
-      <div class="screenshot-thumbs">
-        ${media.map((item, i) => `
-          <div class="thumb-wrap ${i === 0 ? "active" : ""}" onclick="selectMedia(${i})">
-            <img src="${item.thumb || item.src}" class="thumb" alt="media ${i + 1}">
-            ${item.type === "video" ? `<div class="thumb-play">&#9654;</div>` : ""}
-          </div>
-        `).join("")}
-      </div>
-    </div>
-    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
-      <button class="lightbox-close" onclick="closeLightbox()">✕</button>
-      <button class="lightbox-arrow lightbox-left" onclick="event.stopPropagation();lightboxMove(-1)">&#8249;</button>
-      <img id="lightbox-img" src="" alt="screenshot">
-      <button class="lightbox-arrow lightbox-right" onclick="event.stopPropagation();lightboxMove(1)">&#8250;</button>
-    </div>
-  ` : "";
-
   container.innerHTML = `
-    <div class="gd-wrapper">
-
-      <!-- TOP ROW: cover image + info panel -->
-      <div class="gd-top">
-
-        <div class="gd-img-col">
-          <img
-            src="${game.imageHor || game.image}"
-            alt="${game.title}"
-            class="gd-cover"
-            onerror="this.src='https://placehold.co/600x340/1c1c2e/7c3aed?text=No+Image'"
-          >
-        </div>
-
-        <div class="gd-side">
-          <h1 class="gd-title">${game.title} — ${game.platform}</h1>
-
-          <div class="gd-tags">
-            <span class="gd-tag gd-tag-platform">🎮 ${game.platform}</span>
-            <span class="gd-tag gd-tag-stock">✔ In Stock</span>
-            <span class="gd-tag gd-tag-digital">✔ Digital Download</span>
-          </div>
-
-          <div class="gd-price-block">
-            <span class="gd-orig-price">€${game.originalPrice}</span>
-            <span class="gd-disc-tag">-${game.discount}%</span>
-            <span class="gd-final-price">€${game.price}</span>
-          </div>
-
-          <div class="gd-buy-actions" id="gd-buy-actions">
-            ${buildWishBtn(game)}
-            ${buildCartBtn(game)}
-          </div>
-        </div>
+    <div class="game-detail">
+      <div>
+        <img src="${game.image}" alt="${game.title}" onerror="this.src='https://placehold.co/320x400/1c1c2e/7c3aed?text=No+Image'">
       </div>
-
-      <!-- MEDIA GALLERY -->
-      ${galleryHTML}
-
-      <!-- BOTTOM ROW: about + meta sidebar -->
-      <div class="gd-bottom">
-
-        <div class="gd-about">
-          <h3 class="gd-section-title">About this game</h3>
-          <p class="gd-desc" id="desc-text">${shortDesc}</p>
-          ${hasMore ? `<button class="read-more-btn" onclick="toggleDesc('${encodeURIComponent(fullDesc)}', '${encodeURIComponent(shortDesc)}')">Read more ▾</button>` : ""}
-          ${sysreqHTML}
+      <div class="game-detail-info">
+        <h1>${game.title}</h1>
+        <div class="game-meta">
+          <span class="meta-tag">🎮 ${game.platform}</span>
+          <span class="meta-tag">🏷️ ${game.genre}</span>
         </div>
-
-        <div class="gd-meta">
-          ${game.reviewScore ? `
-          <div class="gd-review-block">
-            <div class="gd-review-circle" style="border-color:${reviewColor}; color:${reviewColor}">
-              ${game.reviewScore}
-            </div>
-            <div class="gd-review-info">
-              <span class="gd-review-label">Based on</span>
-              <span class="gd-review-count">${game.reviewCount} reviews</span>
-              <span class="gd-review-sentiment" style="color:${reviewColor}">${game.reviewText}</span>
-            </div>
-          </div>` : ""}
-          <div class="info-table">${infoRows}</div>
+        <p class="game-description">${game.description}</p>
+        <div class="price-section">
+          <div class="price-big">
+            <span class="new">€${game.price}</span>
+            <span class="old">€${game.originalPrice}</span>
+            <span class="disc">-${game.discount}%</span>
+          </div>
+          <div class="action-btns">
+            <button class="btn btn-primary" onclick='addToCart(${JSON.stringify(game)})'>🛒 Додати до кошика</button>
+            <button class="btn btn-outline" onclick='addToWishlist(${JSON.stringify(game)})'>❤️ До вішлісту</button>
+          </div>
         </div>
-
       </div>
     </div>
   `;
-
-  window._media = media;
-  window._currentMedia = 0;
 
   // Similar games
   const similar = games.filter(g => g.genre === game.genre && g.id !== game.id).slice(0, 4);
   const simGrid = document.getElementById("similar-grid");
   if (simGrid) simGrid.innerHTML = similar.map(createGameCard).join("");
-}
-
-// ─── GAME PAGE BUTTON BUILDERS ────────────────────────
-function buildWishBtn(game) {
-  const active = getWishlist().some(g => g.id === game.id);
-  return `<button
-    id="gd-wish-btn"
-    class="gd-wish-btn${active ? " active" : ""}"
-    onclick='toggleWishlistGame(${JSON.stringify(game)})'
-    title="${active ? "Remove from Wishlist" : "Add to Wishlist"}">
-    ${active ? "💜" : "🤍"}
-  </button>`;
-}
-
-function buildCartBtn(game) {
-  const active = getCart().some(g => g.id === game.id);
-  return `<button
-    id="gd-cart-btn"
-    class="gd-cart-btn${active ? " in-cart" : ""}"
-    onclick='toggleCartGame(${JSON.stringify(game)})'>
-    ${active ? "✓ In Cart" : "🛒 Add to Cart"}
-  </button>`;
-}
-
-// ─── READ MORE TOGGLE ─────────────────────────────────
-function toggleDesc(fullEnc, shortEnc) {
-  const el = document.getElementById("desc-text");
-  const btn = document.querySelector(".read-more-btn");
-  if (!el || !btn) return;
-  const full = decodeURIComponent(fullEnc);
-  const short = decodeURIComponent(shortEnc);
-  if (el.textContent === short) {
-    el.textContent = full;
-    btn.textContent = "Show less ▴";
-  } else {
-    el.textContent = short;
-    btn.textContent = "Read more ▾";
-  }
 }
 
 // ─── CART PAGE ────────────────────────────────────────
@@ -556,153 +186,72 @@ function renderCart() {
 
   if (cart.length === 0) {
     container.innerHTML = `
-      <div class="checkout-empty">
+      <div class="empty-state">
         <div class="emoji">🛒</div>
-        <h2>Your cart is empty</h2>
-        <p>Add some games to get started</p>
-        <a href="catalogue.html" class="checkout-primary-btn">Browse Catalogue</a>
+        <h2>Кошик порожній</h2>
+        <p>Додай кілька ігор щоб почати</p>
+        <a href="catalogue.html" class="btn btn-primary" style="margin-top:1rem">Перейти до каталогу</a>
       </div>`;
     if (summary) summary.innerHTML = "";
     return;
   }
 
-  container.innerHTML = cart.map(game => `
-    <div class="checkout-cart-item">
-      <a href="game.html?id=${game.id}" class="checkout-cart-cover">
-        <img src="${game.imageHor || game.image}" alt="${game.title}" onerror="this.src='https://placehold.co/180x100/1c1c2e/7c3aed?text=?'">
-      </a>
-      <div class="checkout-cart-info">
-        <h3>${game.title}</h3>
-        <p>${game.platform} • ${game.genre}</p>
-        <span class="checkout-platform">🎮 Digital key</span>
+  container.innerHTML = cart.map(game => {
+    const qty = game.quantity || 1;
+    const lineTotal = (game.price * qty).toFixed(2);
+    return `
+      <div class="cart-item">
+        <img src="${game.imageVer || game.image}" alt="${game.title}" onerror="this.src='https://placehold.co/80x80/1c1c2e/7c3aed?text=?'">
+        <div class="cart-item-info">
+          <h3>${game.title}</h3>
+          <p>${game.platform} • ${game.genre}</p>
+          <div class="cart-item-prices">
+            <span class="cart-price-old">€${game.originalPrice}</span>
+            <span class="cart-price-new">€${game.price}</span>
+            <span class="cart-price-discount">-${game.discount}%</span>
+          </div>
+        </div>
+        <div class="cart-qty-controls">
+          <button class="qty-btn" onclick="updateCartQuantity(${game.id}, -1)">−</button>
+          <span class="qty-value">${qty}</span>
+          <button class="qty-btn" onclick="updateCartQuantity(${game.id}, 1)">+</button>
+        </div>
+        <span class="cart-item-price">€${lineTotal}</span>
+        <button class="btn btn-outline cart-remove-btn" onclick="handleRemoveFromCart(${game.id})">🗑️</button>
       </div>
-      <div class="checkout-cart-actions">
-        <strong>€${game.price}</strong>
-        <select aria-label="Quantity">
-          <option selected>1</option>
-        </select>
-        <button onclick="handleRemoveFromCart(${game.id})" title="Remove">🗑</button>
-      </div>
-    </div>
-  `).join("");
+    `;
+  }).join("");
 
-  const total = cart.reduce((sum, g) => sum + g.price, 0).toFixed(2);
-  const official = cart.reduce((sum, g) => sum + g.originalPrice, 0).toFixed(2);
-  const saved = cart.reduce((sum, g) => sum + (g.originalPrice - g.price), 0).toFixed(2);
+  const totalItems = cart.reduce((sum, g) => sum + (g.quantity || 1), 0);
+  const total = cart.reduce((sum, g) => sum + g.price * (g.quantity || 1), 0).toFixed(2);
+  const saved = cart.reduce((sum, g) => sum + (g.originalPrice - g.price) * (g.quantity || 1), 0).toFixed(2);
 
   if (summary) {
     summary.innerHTML = `
-      <div class="checkout-summary-box">
-        <div class="checkout-summary-row"><span>Official price</span><span>€${official}</span></div>
-        <div class="checkout-summary-row"><span>Discount</span><span>-€${saved}</span></div>
-        <div class="checkout-summary-row checkout-total"><span>Total</span><span>€${total}</span></div>
-        <button class="checkout-primary-btn" onclick="checkout()">Next ›</button>
-        <div class="checkout-or"><span></span>or<span></span></div>
-        <a href="catalogue.html" class="checkout-secondary-link">‹ Continue shopping</a>
+      <div class="summary-box">
+        <div class="summary-row"><span>Кількість ігор</span><span>${totalItems}</span></div>
+        <div class="summary-row"><span>Ти заощаджуєш</span><span style="color:var(--success)">-€${saved}</span></div>
+        <div class="summary-row total"><span>Разом</span><span>€${total}</span></div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:1rem" onclick="checkout()">
+          ✅ Оформити замовлення
+        </button>
       </div>
     `;
   }
 }
-
 function handleRemoveFromCart(id) {
   removeFromCart(id);
   renderCart();
-  showToast("🗑️ Game removed from cart");
+  showToast("🗑️ Гру видалено з кошика");
 }
 
 function checkout() {
+  // Save cart to receipt storage before clearing
   const cart = getCart();
-  if (cart.length === 0) {
-    showToast("Your cart is empty");
-    return;
-  }
-  window.location.href = "checkout.html";
-}
-
-function initCheckoutPage() {
-  const cart = getCart();
-  const form = document.getElementById("checkout-form");
-  const items = document.getElementById("payment-items");
-  const totalBox = document.getElementById("payment-total");
-
-  if (cart.length === 0) {
-    window.location.href = "cart.html";
-    return;
-  }
-
-  if (items) {
-    items.innerHTML = cart.map(game => `
-      <div class="payment-item">
-        <img src="${game.imageHor || game.image}" alt="${game.title}" onerror="this.src='https://placehold.co/64x42/1c1c2e/7c3aed?text=?'">
-        <div>
-          <strong>${game.title}</strong>
-          <span>${game.platform}</span>
-        </div>
-        <b>€${game.price}</b>
-      </div>
-    `).join("");
-  }
-
-  if (totalBox) {
-    const total = cart.reduce((sum, game) => sum + game.price, 0).toFixed(2);
-    totalBox.innerHTML = `
-      <div class="checkout-summary-row checkout-total">
-        <span>Total</span>
-        <span>€${total}</span>
-      </div>
-    `;
-  }
-
-  if (form) form.addEventListener("submit", handleCheckoutSubmit);
-}
-
-function handleCheckoutSubmit(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const data = {
-    fullName: form.fullName.value.trim(),
-    email: form.email.value.trim(),
-    phone: form.phone.value.trim(),
-    paymentMethod: form.paymentMethod.value
-  };
-
-  const errors = validateCheckoutForm(data);
-  showCheckoutErrors(errors);
-  if (Object.keys(errors).length > 0) return;
-
-  const cart = getCart();
-  const order = {
-    id: "ZVX-" + Math.floor(100000 + Math.random() * 900000),
-    date: new Date().toISOString(),
-    customer: data,
-    items: cart,
-    total: cart.reduce((sum, game) => sum + game.price, 0)
-  };
-
-  localStorage.setItem("lastOrder", JSON.stringify(order));
+  localStorage.setItem("lastOrder", JSON.stringify(cart));
+  localStorage.setItem("lastOrderId", "ZVX-" + Math.floor(1000 + Math.random() * 9000));
   clearCart();
   window.location.href = "receipt.html";
-}
-
-function validateCheckoutForm(data) {
-  const errors = {};
-  if (data.fullName.length < 2) errors.fullName = "Enter your full name";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) errors.email = "Enter a valid email";
-  if (data.phone.length < 7) errors.phone = "Enter a valid phone number";
-  if (!data.paymentMethod) errors.paymentMethod = "Choose a payment method";
-  return errors;
-}
-
-function showCheckoutErrors(errors) {
-  ["fullName", "email", "phone", "paymentMethod"].forEach(field => {
-    const message = document.getElementById(`${field}Error`);
-    const input = document.getElementById(field);
-    if (message) {
-      message.textContent = errors[field] || "";
-      message.classList.toggle("show", Boolean(errors[field]));
-    }
-    if (input) input.classList.toggle("error", Boolean(errors[field]));
-  });
 }
 
 // ─── WISHLIST PAGE ────────────────────────────────────
@@ -719,146 +268,77 @@ function renderWishlist() {
     grid.innerHTML = `
       <div class="empty-state" style="grid-column:1/-1">
         <div class="emoji">❤️</div>
-        <h2>Your wishlist is empty</h2>
-        <p>Add games you want to buy later</p>
-        <a href="catalogue.html" class="btn btn-primary" style="margin-top:1rem">Browse Catalogue</a>
+        <h2>Список бажаного порожній</h2>
+        <p>Додай ігри які хочеш купити пізніше</p>
+        <a href="catalogue.html" class="btn btn-primary" style="margin-top:1rem">Перейти до каталогу</a>
       </div>`;
     return;
   }
 
-  // Reuse the standard card (which already has cart + wishlist buttons)
-  grid.innerHTML = list.map(createGameCard).join("");
+  grid.innerHTML = list.map(game => `
+    <div class="game-card" style="display:block; text-decoration:none; color:var(--text)">
+      <a href="game.html?id=${game.id}" style="text-decoration:none; color:inherit">
+        <img src="${game.image}" alt="${game.title}" style="width:100%; aspect-ratio:3/4; object-fit:cover;" onerror="this.src='https://placehold.co/300x400/1c1c2e/7c3aed?text=No+Image'">
+        <div class="game-card-info">
+          <h3>${game.title}</h3>
+          <p class="platform">${game.platform} • ${game.genre}</p>
+          <div class="price-row">
+            <span class="price-new">€${game.price}</span>
+            <span class="price-old">€${game.originalPrice}</span>
+            <span class="discount-badge">-${game.discount}%</span>
+          </div>
+        </div>
+      </a>
+      <div style="padding: 0 0.85rem 0.85rem; display:flex; gap:0.5rem;">
+        <button class="btn btn-primary" style="flex:1; justify-content:center; font-size:0.8rem; padding:8px" onclick='addToCart(${JSON.stringify(game)})'>🛒 В кошик</button>
+        <button class="btn btn-outline" style="padding:8px 10px" onclick="handleRemoveFromWishlist(${game.id})">🗑️</button>
+      </div>
+    </div>
+  `).join("");
 }
 
 function handleRemoveFromWishlist(id) {
   removeFromWishlist(id);
   renderWishlist();
-  showToast("🗑️ Game removed from wishlist");
+  showToast("🗑️ Гру видалено з вішлісту");
 }
 
 // ─── RECEIPT PAGE ─────────────────────────────────────
 function initReceiptPage() {
-  const savedOrder = JSON.parse(localStorage.getItem("lastOrder")) || null;
-  const order = Array.isArray(savedOrder)
-    ? { id: localStorage.getItem("lastOrderId") || "ZVX-0000", items: savedOrder, total: savedOrder.reduce((sum, g) => sum + g.price, 0) }
-    : savedOrder;
+  const order = JSON.parse(localStorage.getItem("lastOrder")) || [];
+  const orderId = localStorage.getItem("lastOrderId") || "ZVX-0000";
   const box = document.getElementById("receipt-box");
   if (!box) return;
 
-  if (!order || !order.items || order.items.length === 0) {
+  if (order.length === 0) {
     box.innerHTML = `
       <div class="empty-state">
         <div class="emoji">❓</div>
-        <h2>Order not found</h2>
-        <a href="index.html" class="btn btn-primary" style="margin-top:1rem">Back to Home</a>
+        <h2>Замовлення не знайдено</h2>
+        <a href="index.html" class="btn btn-primary" style="margin-top:1rem">На головну</a>
       </div>`;
     return;
   }
 
-  const total = Number(order.total || order.items.reduce((sum, g) => sum + g.price, 0)).toFixed(2);
+  const total = order.reduce((sum, g) => sum + g.price, 0).toFixed(2);
 
   box.innerHTML = `
     <span class="receipt-success-icon">🎮</span>
-    <h1>Game activation ready</h1>
-    <p>Your payment details were accepted and your digital keys are ready.</p>
-    <div class="order-id">Order number: #${order.id}</div>
+    <h1>Дякуємо за покупку!</h1>
+    <p>Твоє замовлення успішно оформлено. Гарної гри!</p>
+    <div class="order-id">Номер замовлення: #${orderId}</div>
     <div class="receipt-items-list">
-      ${order.items.map(g => `
+      ${order.map(g => `
         <div class="receipt-item">
           <span>${g.title} <small style="color:var(--text2)">(${g.platform})</small></span>
-          <strong>ZVX-${String(g.id).padStart(4, "0")}-${Math.floor(1000 + Math.random() * 9000)}</strong>
+          <strong>€${g.price}</strong>
         </div>
       `).join("")}
       <div class="receipt-item" style="border-top: 2px solid var(--accent); margin-top:0.5rem; padding-top:1rem;">
-        <span style="font-weight:700; color:var(--text)">Total</span>
+        <span style="font-weight:700; color:var(--text)">Разом</span>
         <strong>€${total}</strong>
       </div>
     </div>
-    <a href="index.html" class="btn btn-primary" style="margin-top:1rem; justify-content:center">🏠 Back to Store</a>
+    <a href="index.html" class="btn btn-primary" style="margin-top:1rem; justify-content:center">🏠 Повернутись до магазину</a>
   `;
-}
-
-// ─── NEWSLETTER ───────────────────────────────────────
-function subscribeNewsletter() {
-  const input = document.querySelector(".newsletter-input input");
-  if (!input) return;
-  const email = input.value.trim();
-  if (!email || !email.includes("@")) {
-    showToast("⚠️ Please enter a valid email!");
-    return;
-  }
-  input.value = "";
-  showToast("✅ Thanks! You're subscribed to deals!");
-}
-
-// ─── MEDIA GALLERY ────────────────────────────────────
-function selectMedia(index) {
-  window._currentMedia = index;
-  const item = (window._media || [])[index];
-  if (!item) return;
-
-  const container = document.getElementById("media-main-container");
-  const thumbWraps = document.querySelectorAll(".thumb-wrap");
-  thumbWraps.forEach((t, i) => t.classList.toggle("active", i === index));
-
-  const oldImg = document.getElementById("media-main-img");
-  const oldVideo = document.getElementById("media-main-video");
-  if (oldImg) oldImg.remove();
-  if (oldVideo) { oldVideo.pause(); oldVideo.remove(); }
-
-  if (item.type === "video") {
-    const video = document.createElement("video");
-    video.id = "media-main-video";
-    video.src = item.src;
-    video.controls = true;
-    video.autoplay = true;
-    video.poster = item.thumb || "";
-    video.style.cssText = "width:100%;height:100%;object-fit:cover;border-radius:var(--radius);";
-    container.insertBefore(video, container.firstChild);
-  } else {
-    const img = document.createElement("img");
-    img.id = "media-main-img";
-    img.src = item.src;
-    img.alt = "screenshot";
-    img.style.cssText = "width:100%;height:100%;object-fit:cover;cursor:zoom-in;";
-    img.onclick = () => openLightbox(index);
-    container.insertBefore(img, container.firstChild);
-  }
-}
-
-function changeMedia(dir) {
-  const count = (window._media || []).length;
-  if (count === 0) return;
-  window._currentMedia = ((window._currentMedia || 0) + dir + count) % count;
-  selectMedia(window._currentMedia);
-}
-
-function openLightbox(index) {
-  const item = (window._media || [])[index];
-  if (!item || item.type === "video") return;
-  window._currentMedia = index;
-  const lb = document.getElementById("lightbox");
-  const img = document.getElementById("lightbox-img");
-  if (!lb || !img) return;
-  img.src = item.src;
-  lb.classList.add("open");
-  document.body.style.overflow = "hidden";
-}
-
-function closeLightbox() {
-  const lb = document.getElementById("lightbox");
-  if (lb) lb.classList.remove("open");
-  document.body.style.overflow = "";
-}
-
-function lightboxMove(dir) {
-  const images = (window._media || []).filter(m => m.type === "image");
-  if (images.length === 0) return;
-  const currentItem = window._media[window._currentMedia];
-  let imgIndex = images.indexOf(currentItem);
-  imgIndex = (imgIndex + dir + images.length) % images.length;
-  const newItem = images[imgIndex];
-  window._currentMedia = window._media.indexOf(newItem);
-  const img = document.getElementById("lightbox-img");
-  if (img) img.src = newItem.src;
 }

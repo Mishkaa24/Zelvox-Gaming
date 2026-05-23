@@ -2886,3 +2886,184 @@ footer {
     grid-column: auto;
   }
 }
+
+/* ─── FIX 1: Remove any hover button on game cards ── */
+.game-card .card-hover-btn,
+.game-card .hover-btn,
+.game-card .card-overlay,
+.game-card > .btn,
+.game-card > button {
+  display: none !important;
+}
+
+/* Ensure game card never shifts height on hover */
+.game-card {
+  overflow: hidden;
+  position: relative;
+}
+
+/* ─── FIX 2: Bigger banner dots ─────────────────── */
+.banner-dots {
+  position: absolute;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.dot:hover { background: rgba(255, 255, 255, 0.65); }
+
+.dot.active {
+  background: var(--accent);
+  width: 36px;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* ─── FIX 3: Back to top — right side ───────────── */
+#back-to-top {
+  left: auto;
+  right: 2rem;
+}
+
+/* ─── FIX 4: Cart quantity controls ─────────────── */
+.cart-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.cart-item img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.cart-item-info {
+  flex: 1;
+  min-width: 140px;
+}
+
+.cart-item-info h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.cart-item-info p {
+  color: var(--text2);
+  font-size: 0.82rem;
+  margin-bottom: 5px;
+}
+
+/* Original + discounted price on cart item */
+.cart-item-prices {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.cart-price-old {
+  font-size: 0.8rem;
+  color: var(--text2);
+  text-decoration: line-through;
+}
+
+.cart-price-new {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cart-price-discount {
+  background: var(--accent);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+/* Quantity controls */
+.cart-qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.qty-btn {
+  background: var(--bg3);
+  border: none;
+  color: var(--text);
+  width: 34px;
+  height: 34px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qty-btn:hover { background: var(--accent); color: white; }
+
+.qty-value {
+  min-width: 36px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0 4px;
+  color: var(--text);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  line-height: 34px;
+}
+
+/* Line total price */
+.cart-item-price {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+  min-width: 60px;
+  text-align: right;
+}
+
+/* Remove button */
+.cart-remove-btn {
+  padding: 8px 10px !important;
+  flex-shrink: 0;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .cart-item { gap: 0.75rem; }
+  .cart-qty-controls { order: 3; }
+  .cart-item-price { order: 4; }
+  .cart-remove-btn { order: 5; }
+}
