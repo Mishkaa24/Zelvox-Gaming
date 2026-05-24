@@ -39,7 +39,7 @@ function renderBanner() {
       <div class="slide-overlay">
         <div class="slide-info">
           <h2>${g.title}</h2>
-          <p>${g.description}</p>
+          <p>${g.genre}</p>
           <a href="game.html?id=${g.id}" class="btn btn-primary">Дивитись гру →</a>
         </div>
       </div>
@@ -132,38 +132,138 @@ function initGamePage() {
     container.innerHTML = `
       <div class="empty-state">
         <div class="emoji">❌</div>
-        <h2>Гру не знайдено</h2>
-        <a href="catalogue.html" class="btn btn-primary">← Каталог</a>
+        <h2>Game not found</h2>
+        <a href="catalogue.html" class="btn btn-primary">← Catalogue</a>
       </div>`;
     return;
   }
 
   document.title = `Zelvox Gaming — ${game.title}`;
 
+  // Store media for switcher
+  window._gameMedia = game.media || [];
+
+  // Determine main image/media (Horizontal image as fallback)
+  const fallbackImg = game.imageHor || game.image;
+  const mainMedia = window._gameMedia[0];
+  
+  const mediaMainHTML = mainMedia
+    ? mainMedia.type === "video"
+      ? `<video id="game-main-video" src="${mainMedia.src}" controls autoplay muted class="gd-cover"></video>`
+      : `<img id="game-main-img" src="${mainMedia.src}" class="gd-cover" alt="${game.title}" style="cursor: zoom-in;" onclick="openLightbox(0)">`
+    : `<img src="${fallbackImg}" class="gd-cover" alt="${game.title}" style="cursor: zoom-in;" onclick="openLightbox(-1)">`;
+
+  const mediaThumbs = window._gameMedia.length > 0
+    ? `<div class="screenshot-thumbs" style="margin-top: 1rem;">
+        ${window._gameMedia.map((m, i) => `
+          <div class="thumb-wrap ${i === 0 ? "active" : ""}" onclick="switchGameMedia(${i})" id="thumb-${i}">
+            <img class="thumb" src="${m.thumb || m.src}" alt="thumb">
+            ${m.type === "video" ? '<div class="thumb-play">▶</div>' : ''}
+          </div>
+        `).join("")}
+      </div>`
+    : "";
+
+  const scoreColor = game.reviewScore >= 90 ? "#4ade80" : game.reviewScore >= 70 ? "#facc15" : "#f87171";
+
+  const sysreqHTML = game.systemReqs ? `
+    <div class="gd-sysreqs">
+      <h3 class="gd-section-title">⚙️ System Requirements</h3>
+      <div class="sysreq-grid">
+        <div class="sysreq-col">
+          <h4>Minimum</h4>
+          ${game.systemReqs.min.map(([label, val]) => `
+            <div class="sysreq-row">
+              <span class="sysreq-key">${label}</span>
+              <span class="sysreq-val">${val}</span>
+            </div>
+          `).join("")}
+        </div>
+        <div class="sysreq-col">
+          <h4>Recommended</h4>
+          ${game.systemReqs.rec.map(([label, val]) => `
+            <div class="sysreq-row">
+              <span class="sysreq-key">${label}</span>
+              <span class="sysreq-val">${val}</span>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    </div>
+  ` : "";
+
   container.innerHTML = `
-    <div class="game-detail">
-      <div>
-        <img src="${game.image}" alt="${game.title}" onerror="this.src='https://placehold.co/320x400/1c1c2e/7c3aed?text=No+Image'">
-      </div>
-      <div class="game-detail-info">
-        <h1>${game.title}</h1>
-        <div class="game-meta">
-          <span class="meta-tag">🎮 ${game.platform}</span>
-          <span class="meta-tag">🏷️ ${game.genre}</span>
-        </div>
-        <p class="game-description">${game.description}</p>
-        <div class="price-section">
-          <div class="price-big">
-            <span class="new">€${game.price}</span>
-            <span class="old">€${game.originalPrice}</span>
-            <span class="disc">-${game.discount}%</span>
+    <div class="gd-wrapper">
+      <div class="gd-top">
+        <!-- LEFT: Media -->
+        <div class="gd-img-col" style="border:none; border-radius:0;">
+          <div class="screenshot-main">
+            ${mediaMainHTML}
           </div>
-          <div class="action-btns">
-            <button class="btn btn-primary" onclick='addToCart(${JSON.stringify(game)})'>🛒 Додати до кошика</button>
-            <button class="btn btn-outline" onclick='addToWishlist(${JSON.stringify(game)})'>❤️ До вішлісту</button>
+          ${mediaThumbs}
+        </div>
+
+        <!-- RIGHT: Info Panel -->
+        <div class="gd-side">
+          <h1 class="gd-title">${game.title}</h1>
+          
+          <div class="gd-tags">
+            <span class="gd-tag gd-tag-platform">🎮 ${game.platform}</span>
+            <span class="gd-tag gd-tag-platform">🏷️ ${game.genre}</span>
+            ${game.releaseDate ? `<span class="gd-tag gd-tag-platform">📅 ${game.releaseDate}</span>` : ""}
+          </div>
+
+          ${game.developer ? `
+          <div style="font-size:0.9rem; margin-top:0.5rem;">
+            <div style="color:var(--text2);">Developer: <span style="color:var(--text);font-weight:600;">${game.developer}</span></div>
+            ${game.publisher && game.publisher !== game.developer ? `
+              <div style="color:var(--text2);margin-top:0.25rem;">Publisher: <span style="color:var(--text);font-weight:600;">${game.publisher}</span></div>
+            ` : ""}
+          </div>` : ""}
+
+          <div class="gd-price-block" style="margin-top: 1rem; padding: 1.25rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);">
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem;flex-wrap:wrap;">
+              <span class="gd-orig-price">€${game.originalPrice}</span>
+              <span class="gd-disc-tag">-${game.discount}%</span>
+              <span class="gd-final-price">€${game.price}</span>
+            </div>
+            <div class="gd-buy-actions">
+              <button class="gd-wish-btn" onclick="handleWishFromPage(${game.id})" title="Add to Wishlist">❤️</button>
+              <button class="gd-cart-btn" onclick="handleCartFromPage(${game.id})">🛒 Add to Cart</button>
+            </div>
           </div>
         </div>
       </div>
+
+      <div class="gd-bottom">
+        <!-- LEFT: About & Sysreq -->
+        <div class="gd-about">
+          <h2 class="gd-section-title">📖 About</h2>
+          <p class="gd-desc">${game.description}</p>
+          ${sysreqHTML}
+        </div>
+
+        <!-- RIGHT: Meta / Reviews -->
+        <div class="gd-meta">
+          ${game.reviewScore ? `
+          <div class="gd-review-block">
+            <div class="gd-review-circle" style="color:${scoreColor}; border-color:${scoreColor};">${game.reviewScore}%</div>
+            <div class="gd-review-info">
+              <div class="gd-review-label">User Reviews</div>
+              <div class="gd-review-sentiment" style="color:${scoreColor};">${game.reviewText || "Very Positive"}</div>
+              ${game.reviewCount ? `<div class="gd-review-count">Based on ${game.reviewCount} reviews</div>` : ""}
+            </div>
+          </div>` : ""}
+        </div>
+      </div>
+    </div>
+
+    <!-- Lightbox Overlay -->
+    <div id="game-lightbox" class="lightbox">
+      <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+      <button class="lightbox-arrow lightbox-left" onclick="navigateLightbox(-1)">‹</button>
+      <img id="lightbox-img" src="" alt="Zoomed">
+      <button class="lightbox-arrow lightbox-right" onclick="navigateLightbox(1)">›</button>
     </div>
   `;
 
@@ -171,6 +271,97 @@ function initGamePage() {
   const similar = games.filter(g => g.genre === game.genre && g.id !== game.id).slice(0, 4);
   const simGrid = document.getElementById("similar-grid");
   if (simGrid) simGrid.innerHTML = similar.map(createGameCard).join("");
+}
+
+// ─── MEDIA SWITCHER ───────────────────────────────────
+function switchGameMedia(index) {
+  const media = window._gameMedia;
+  if (!media || !media[index]) return;
+  
+  const m = media[index];
+  const mainDiv = document.querySelector(".screenshot-main");
+  if (!mainDiv) return;
+
+  // Update main media
+  let mediaHTML;
+  if (m.type === "video") {
+    mediaHTML = `<video id="game-main-video" src="${m.src}" controls autoplay muted class="gd-cover"></video>`;
+  } else {
+    mediaHTML = `<img id="game-main-img" src="${m.src}" class="gd-cover" alt="Screenshot" style="cursor: zoom-in;" onclick="openLightbox(${index})">`;
+  }
+  
+  mainDiv.innerHTML = mediaHTML;
+
+  // Update active thumbnail
+  document.querySelectorAll(".thumb-wrap").forEach((el, i) => {
+    el.classList.toggle("active", i === index);
+  });
+}
+
+// ─── LIGHTBOX ─────────────────────────────────────────
+let currentLightboxIndex = 0;
+
+function openLightbox(index) {
+  const media = window._gameMedia;
+  let imgSrc = "";
+
+  if (index === -1) {
+    // Fallback to the horizontal image if no media array is defined
+    const params = new URLSearchParams(window.location.search);
+    const game = games.find(g => g.id === parseInt(params.get("id")));
+    if (game) imgSrc = game.imageHor || game.image;
+    currentLightboxIndex = -1;
+  } else {
+    if (!media || media.length === 0) return;
+    const m = media[index];
+    if (!m || m.type === "video") return; // Only zoom images
+    imgSrc = m.src;
+    currentLightboxIndex = index;
+  }
+
+  const lb = document.getElementById("game-lightbox");
+  const lbImg = document.getElementById("lightbox-img");
+  
+  if (lb && lbImg && imgSrc) {
+    lbImg.src = imgSrc;
+    lb.classList.add("open");
+  }
+}
+
+function closeLightbox() {
+  const lb = document.getElementById("game-lightbox");
+  if (lb) lb.classList.remove("open");
+}
+
+function navigateLightbox(direction) {
+  const media = window._gameMedia;
+  if (!media || media.length === 0 || currentLightboxIndex === -1) return;
+
+  let newIndex = currentLightboxIndex + direction;
+  
+  // Loop to find the next/prev image (skipping videos)
+  while (newIndex >= 0 && newIndex < media.length) {
+    if (media[newIndex].type === "image") {
+      currentLightboxIndex = newIndex;
+      document.getElementById("lightbox-img").src = media[currentLightboxIndex].src;
+      
+      // Optionally sync the main display to this image too
+      switchGameMedia(currentLightboxIndex);
+      return;
+    }
+    newIndex += direction;
+  }
+}
+
+// ─── GAME PAGE CART/WISH HELPERS ─────────────────────
+function handleCartFromPage(id) {
+  const game = games.find(g => g.id === id);
+  if (game) addToCart(game);
+}
+
+function handleWishFromPage(id) {
+  const game = games.find(g => g.id === id);
+  if (game) addToWishlist(game);
 }
 
 // ─── CART PAGE ────────────────────────────────────────
@@ -196,40 +387,25 @@ function renderCart() {
     return;
   }
 
-  container.innerHTML = cart.map(game => {
-    const qty = game.quantity || 1;
-    const lineTotal = (game.price * qty).toFixed(2);
-    return `
-      <div class="cart-item">
-        <img src="${game.imageVer || game.image}" alt="${game.title}" onerror="this.src='https://placehold.co/80x80/1c1c2e/7c3aed?text=?'">
-        <div class="cart-item-info">
-          <h3>${game.title}</h3>
-          <p>${game.platform} • ${game.genre}</p>
-          <div class="cart-item-prices">
-            <span class="cart-price-old">€${game.originalPrice}</span>
-            <span class="cart-price-new">€${game.price}</span>
-            <span class="cart-price-discount">-${game.discount}%</span>
-          </div>
-        </div>
-        <div class="cart-qty-controls">
-          <button class="qty-btn" onclick="updateCartQuantity(${game.id}, -1)">−</button>
-          <span class="qty-value">${qty}</span>
-          <button class="qty-btn" onclick="updateCartQuantity(${game.id}, 1)">+</button>
-        </div>
-        <span class="cart-item-price">€${lineTotal}</span>
-        <button class="btn btn-outline cart-remove-btn" onclick="handleRemoveFromCart(${game.id})">🗑️</button>
+  container.innerHTML = cart.map(game => `
+    <div class="cart-item">
+      <img src="${game.image}" alt="${game.title}" onerror="this.src='https://placehold.co/80x80/1c1c2e/7c3aed?text=?'">
+      <div class="cart-item-info">
+        <h3>${game.title}</h3>
+        <p>${game.platform} • ${game.genre}</p>
       </div>
-    `;
-  }).join("");
+      <span class="cart-item-price">€${game.price}</span>
+      <button class="btn btn-outline" onclick="handleRemoveFromCart(${game.id})" style="margin-left:0.5rem">🗑️</button>
+    </div>
+  `).join("");
 
-  const totalItems = cart.reduce((sum, g) => sum + (g.quantity || 1), 0);
-  const total = cart.reduce((sum, g) => sum + g.price * (g.quantity || 1), 0).toFixed(2);
-  const saved = cart.reduce((sum, g) => sum + (g.originalPrice - g.price) * (g.quantity || 1), 0).toFixed(2);
+  const total = cart.reduce((sum, g) => sum + g.price, 0).toFixed(2);
+  const saved = cart.reduce((sum, g) => sum + (g.originalPrice - g.price), 0).toFixed(2);
 
   if (summary) {
     summary.innerHTML = `
       <div class="summary-box">
-        <div class="summary-row"><span>Кількість ігор</span><span>${totalItems}</span></div>
+        <div class="summary-row"><span>Кількість ігор</span><span>${cart.length}</span></div>
         <div class="summary-row"><span>Ти заощаджуєш</span><span style="color:var(--success)">-€${saved}</span></div>
         <div class="summary-row total"><span>Разом</span><span>€${total}</span></div>
         <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:1rem" onclick="checkout()">
@@ -239,6 +415,7 @@ function renderCart() {
     `;
   }
 }
+
 function handleRemoveFromCart(id) {
   removeFromCart(id);
   renderCart();
@@ -246,7 +423,6 @@ function handleRemoveFromCart(id) {
 }
 
 function checkout() {
-  // Save cart to receipt storage before clearing
   const cart = getCart();
   localStorage.setItem("lastOrder", JSON.stringify(cart));
   localStorage.setItem("lastOrderId", "ZVX-" + Math.floor(1000 + Math.random() * 9000));

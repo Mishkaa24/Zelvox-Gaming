@@ -88,6 +88,8 @@ function updateCartBadge() {
   const count = getCart().reduce((sum, g) => sum + (g.quantity || 1), 0);
   badge.textContent = count;
   badge.style.display = count > 0 ? "inline" : "none";
+  if (count > 0) badge.classList.add("visible");
+  else badge.classList.remove("visible");
 }
 
 // ─── WISHLIST ─────────────────────────────────────────
@@ -124,6 +126,8 @@ function updateWishlistBadge() {
   const count = getWishlist().length;
   badge.textContent = count;
   badge.style.display = count > 0 ? "inline" : "none";
+  if (count > 0) badge.classList.add("visible");
+  else badge.classList.remove("visible");
 }
 
 // ─── BACK TO TOP ──────────────────────────────────────
@@ -136,28 +140,201 @@ function initBackToTop() {
   btn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 }
 
-// ─── RENDER GAME CARD ─────────────────────────────────
+// ─── RENDER GAME CARD (FIXED) ─────────────────────────
 function createGameCard(game) {
+  const cart = getCart();
+  const wishlist = getWishlist();
+  const inCart = cart.some(g => g.id === game.id);
+  const inWish = wishlist.some(g => g.id === game.id);
+
   return `
-    <a class="game-card" href="game.html?id=${game.id}">
-      <img src="${game.imageVer || game.image}" alt="${game.title}" loading="lazy" onerror="this.src='https://placehold.co/300x400/1c1c2e/7c3aed?text=No+Image'">
-      <div class="game-card-info">
-        <h3>${game.title}</h3>
-        <p class="platform">${game.platform} • ${game.genre}</p>
-        <div class="price-row">
-          <span class="price-new">€${game.price}</span>
-          <span class="price-old">€${game.originalPrice}</span>
-          <span class="discount-badge">-${game.discount}%</span>
+    <div class="game-card-wrap">
+      <a class="game-card" href="game.html?id=${game.id}">
+        <img src="${game.imageVer || game.image}" alt="${game.title}" loading="lazy" onerror="this.src='https://placehold.co/300x400/1c1c2e/7c3aed?text=No+Image'">
+        <div class="game-card-info">
+          <h3>${game.title}</h3>
+          <p class="platform">${game.platform} • ${game.genre}</p>
+          <div class="price-row">
+            <span class="price-new">€${game.price}</span>
+            <span class="price-old">€${game.originalPrice}</span>
+            <span class="discount-badge" style="background:var(--accent);color:white;padding:2px 6px;border-radius:4px;font-size:0.75rem;font-weight:700;">-${game.discount}%</span>
+          </div>
         </div>
+      </a>
+      <div class="card-actions">
+        <button class="card-wish-btn ${inWish ? 'active' : ''}" onclick="event.preventDefault(); handleQuickWishlist(${game.id}, this)" title="Wishlist">❤️</button>
+        <button class="card-cart-btn ${inCart ? 'in-cart' : ''}" onclick="event.preventDefault(); handleQuickCart(${game.id}, this)">
+          ${inCart ? '🛒 У кошику' : '🛒 В кошик'}
+        </button>
       </div>
-    </a>
+    </div>
   `;
+}
+
+// ─── QUICK ACTION HELPERS ─────────────────────────────
+function handleQuickCart(id, btn) {
+  // Check if item is already in cart to prevent spamming
+  if (btn.classList.contains("in-cart")) {
+    showToast("⚠️ Гра вже у кошику!");
+    return;
+  }
+  
+  const game = games.find(g => g.id === id); // Relies on games.js being loaded
+  if (!game) return;
+  
+  addToCart(game);
+  btn.classList.add("in-cart");
+  btn.innerHTML = "🛒 У кошику";
+}
+
+function handleQuickWishlist(id, btn) {
+  const game = games.find(g => g.id === id);
+  if (!game) return;
+  
+  const list = getWishlist();
+  const exists = list.find(g => g.id === id);
+  
+  if (exists) {
+    removeFromWishlist(id);
+    btn.classList.remove("active");
+    showToast("🗑️ Гру видалено з вішлісту");
+  } else {
+    addToWishlist(game);
+    btn.classList.add("active");
+  }
+}
+
+// ─── SLIDE-IN PANELS (Cart & Wishlist) ───────────────
+function toggleCartPanel() {
+  const panel = document.getElementById("cart-panel");
+  const overlay = document.getElementById("panel-overlay");
+  const isOpen = panel?.classList.contains("open");
+  closeAllPanels();
+  if (!isOpen) {
+    panel?.classList.add("open");
+    overlay?.classList.add("open");
+    renderCartPanel();
+  }
+}
+
+function toggleWishlistPanel() {
+  const panel = document.getElementById("wishlist-panel");
+  const overlay = document.getElementById("panel-overlay");
+  const isOpen = panel?.classList.contains("open");
+  closeAllPanels();
+  if (!isOpen) {
+    panel?.classList.add("open");
+    overlay?.classList.add("open");
+    renderWishlistPanel();
+  }
+}
+
+function closeAllPanels() {
+  document.querySelectorAll(".header-panel").forEach(p => p.classList.remove("open"));
+  document.getElementById("panel-overlay")?.classList.remove("open");
+  document.getElementById("mobile-nav")?.classList.remove("open");
+  const mobileSearch = document.getElementById("mobile-search-bar");
+  if (mobileSearch) mobileSearch.style.display = "none";
+}
+
+function renderCartPanel() {
+  const cart = getCart();
+  const body = document.getElementById("cart-panel-body");
+  const foot = document.getElementById("cart-panel-foot");
+  if (!body) return;
+
+  if (cart.length === 0) {
+    body.innerHTML = `<div class="panel-empty"><div class="emoji">🛒</div><p>Your cart is empty</p></div>`;
+    if (foot) foot.innerHTML = "";
+    return;
+  }
+
+  body.innerHTML = cart.map(g => `
+    <div class="panel-item">
+      <img src="${g.image}" alt="${g.title}" onerror="this.src='https://placehold.co/60x60/1c1c2e/7c3aed?text=?'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;flex-shrink:0;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:600;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${g.title}</div>
+        <div style="font-size:0.8rem;color:var(--text2);">${g.platform}</div>
+        <div style="font-weight:700;color:var(--accent);">€${g.price}</div>
+      </div>
+      <button class="btn btn-outline" onclick="removeFromCart(${g.id});renderCartPanel();" style="padding:4px 8px;font-size:0.8rem;">🗑️</button>
+    </div>
+  `).join("");
+
+  const total = cart.reduce((sum, g) => sum + g.price, 0).toFixed(2);
+  if (foot) foot.innerHTML = `
+    <div style="display:flex;justify-content:space-between;font-weight:700;margin-bottom:0.75rem;">
+      <span>Total</span><span>€${total}</span>
+    </div>
+    <a href="cart.html" class="btn btn-primary" style="width:100%;justify-content:center;" onclick="closeAllPanels()">Go to Cart →</a>
+  `;
+}
+
+function renderWishlistPanel() {
+  const list = getWishlist();
+  const body = document.getElementById("wishlist-panel-body");
+  const foot = document.getElementById("wishlist-panel-foot");
+  if (!body) return;
+
+  if (list.length === 0) {
+    body.innerHTML = `<div class="panel-empty"><div class="emoji">❤️</div><p>Your wishlist is empty</p></div>`;
+    if (foot) foot.innerHTML = "";
+    return;
+  }
+
+  body.innerHTML = list.map(g => `
+    <div class="panel-item">
+      <img src="${g.image}" alt="${g.title}" onerror="this.src='https://placehold.co/60x60/1c1c2e/7c3aed?text=?'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;flex-shrink:0;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:600;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${g.title}</div>
+        <div style="font-size:0.8rem;color:var(--text2);">${g.platform}</div>
+        <div style="font-weight:700;color:var(--accent);">€${g.price}</div>
+      </div>
+      <button class="btn btn-outline" onclick="removeFromWishlist(${g.id});renderWishlistPanel();" style="padding:4px 8px;font-size:0.8rem;">🗑️</button>
+    </div>
+  `).join("");
+
+  if (foot) foot.innerHTML = `
+    <a href="wishlist.html" class="btn btn-outline" style="width:100%;justify-content:center;" onclick="closeAllPanels()">View Wishlist →</a>
+  `;
+}
+
+// ─── MOBILE SEARCH ────────────────────────────────────
+function toggleMobileSearch() {
+  const bar = document.getElementById("mobile-search-bar");
+  if (!bar) return;
+  const isVisible = bar.style.display === "block";
+  closeAllPanels();
+  if (!isVisible) bar.style.display = "block";
+}
+
+function handleMobileSearch() {
+  const query = document.getElementById("mobile-search-input")?.value.trim();
+  if (query) window.location.href = `catalogue.html?search=${encodeURIComponent(query)}`;
+}
+
+// ─── HAMBURGER MENU ───────────────────────────────────
+function initHamburger() {
+  const btn = document.getElementById("hamburger-btn");
+  const nav = document.getElementById("mobile-nav");
+  if (!btn || !nav) return;
+  btn.addEventListener("click", () => {
+    const isOpen = nav.classList.contains("open");
+    closeAllPanels();
+    if (!isOpen) nav.classList.add("open");
+  });
+}
+
+// ─── NEWSLETTER ───────────────────────────────────────
+function subscribeNewsletter() {
+  showToast("🎉 You're subscribed!");
 }
 
 // ─── INIT ON PAGE LOAD ────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
   initBackToTop();
+  initHamburger();
   updateCartBadge();
   updateWishlistBadge();
 

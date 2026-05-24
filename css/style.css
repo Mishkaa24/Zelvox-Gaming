@@ -3067,3 +3067,20 @@ footer {
   .cart-item-price { order: 4; }
   .cart-remove-btn { order: 5; }
 }
+
+
+
+/* ─── FIX: DISABLE BUGGY HOVER EFFECTS ─── */
+.game-card-wrap:hover,
+.game-card:hover {
+  transform: none !important;
+}
+
+@media (hover: hover) {
+  .card-actions {
+    position: static !important;
+    opacity: 1 !important;
+    background: transparent !important;
+    padding: 0 0.85rem 0.85rem !important;
+  }
+}
